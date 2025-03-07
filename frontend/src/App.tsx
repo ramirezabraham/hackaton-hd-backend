@@ -1,22 +1,48 @@
-import React, { useState } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import { marked } from 'marked';
+
+// Import your SVG files
+import { ReactComponent as HomeIconComponent } from './assets/icons/Home.svg';
+import { ReactComponent as SocialIconComponent } from './assets/icons/People alt.svg';
+import { ReactComponent as RideIconComponent } from './assets/icons/Location on.svg';
+import { ReactComponent as StatsIconComponent } from './assets/icons/Trophy.svg';
+import { ReactComponent as AIIconComponent } from './assets/icons/Hd icon.svg';
+import { ReactComponent as SettingsIconComponent } from './assets/icons/settings.svg'
+import { ReactComponent as SendIconComponent } from './assets/icons/send.svg'
+import { ReactComponent as ArrowIconComponent } from './assets/icons/Arrow.svg'
+import { ReactComponent as TitleIconComponent } from './assets/icons/AI Module.svg'
 
 interface Message {
   role: 'assistant' | 'user';
   content: string;
 }
 
+const navItems = [
+  { icon: HomeIconComponent, text: 'HOME' },
+  { icon: SocialIconComponent, text: 'SOCIAL' },
+  { icon: RideIconComponent, text: 'RIDE' },
+  { icon: StatsIconComponent, text: 'STATS' },
+  { icon: AIIconComponent, text: 'AI' },
+];
+
 function App() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: "Hello! I'm your AI assistant. How can I help you today?"
-    }
-  ]);
+  const initialMessage = "Hello! I'm your Harley-Davidson AI assistant. How can I help you today?";
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [thread, setThread] = useState("");
+  const [typingText, setTypingText] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const typingInterval = setInterval(() => {
+      clearInterval(typingInterval);
+      setTypingText('');
+      setMessages([{ role: 'assistant', content: initialMessage }]);
+    }, 10);
+
+    return () => clearInterval(typingInterval);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +50,15 @@ function App() {
 
     try {
       setIsLoading(true);
-      
-      // Add user message immediately for better UX
+
       const userMessage = { role: 'user' as const, content: input };
       setMessages(prev => [...prev, userMessage]);
       setInput('');
+
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
 
       // Send message to API
       const response = await fetch('http://localhost:8000/sendquery/', {
@@ -46,7 +76,7 @@ function App() {
       }
 
       const data = await response.json();
-      
+
       // Add assistant's response
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -66,90 +96,99 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm px-6 py-4">
-        <div className="flex items-center space-x-2">
-          <Bot className="w-6 h-6 text-blue-600" />
-          <h1 className="text-xl font-semibold text-gray-800">AI Assistant</h1>
-        </div>
-      </header>
-
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-3xl mx-auto space-y-4">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex items-start space-x-2 ${
-                message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-              }`}
-            >
-              <div className={`p-2 rounded-full ${
-                message.role === 'assistant' ? 'bg-blue-100' : 'bg-gray-200'
-              }`}>
-                {message.role === 'assistant' ? (
-                  <Bot className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <User className="w-5 h-5 text-gray-600" />
-                )}
-              </div>
-              <div
-                className={`flex-1 rounded-lg px-4 py-2 max-w-xl ${
-                  message.role === 'assistant'
-                    ? 'bg-white shadow-sm'
-                    : 'bg-blue-600 text-white'
-                }`}
-              >
-                {message.role === 'assistant' ? (
-                  <div className="text-sm" dangerouslySetInnerHTML={{ __html: marked(message.content) }} />
-                ) : (
-                  <p className="text-sm">{message.content}</p>
-                )}
-              </div>
+    <div className="h-[100vh]">
+      <div className="flex flex-col h-[calc(100dvh)] bg-black text-white safe-area-inset-padding">
+        <header className="bg-black px-4 py-3 flex items-center justify-between">
+          <ArrowIconComponent className="w-6 h-6 stroke-2" />
+          <div className="flex items-center space-x-2">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center">
+              <TitleIconComponent />
             </div>
-          ))}
-          {isLoading && (
-            <div className="flex items-start space-x-2">
-              <div className="p-2 rounded-full bg-blue-100">
-                <Bot className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1 rounded-lg px-4 py-2 max-w-xl bg-white shadow-sm">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-white">Harley-Davidson AI</h1>
+            </div>
+          </div>
+          <SettingsIconComponent className="w-6 h-6 text-white stroke-2" />
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-hide">
+          <div className="space-y-4">
+            {typingText ? (
+              <div className="flex justify-start">
+                <div className="rounded-lg px-4 py-2 max-w-[80%] bg-gray-800">
+                  <p className="text-sm">{typingText}</p>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`rounded-lg px-4 py-2 max-w-[80%] ${message.role === 'assistant' ? 'bg-gray-800 appear' : 'bg-gray-700'
+                      }`}
+                  >
+                    {message.role === 'assistant' ? (
+                      <div className="text-sm" dangerouslySetInnerHTML={{ __html: marked(message.content) }} />
+                    ) : (
+                      <p className="text-sm">{message.content}</p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="rounded-lg px-4 py-2 max-w-[80%] bg-gray-800">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Input Form */}
-      <div className="border-t bg-white px-4 py-4">
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex items-center space-x-4">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isLoading}
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`text-white rounded-lg px-4 py-2 flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              isLoading 
-                ? 'bg-blue-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            <span>Send</span>
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
+        <div className="px-4 py-4 flex-shrink-0">
+          <form onSubmit={handleSubmit} className="relative">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Send a message"
+              className="w-full rounded-full bg-gray-800 px-4 py-3 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm resize-none"
+              rows={1}
+              disabled={isLoading}
+              style={{ height: 'auto', overflow: 'hidden' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${target.scrollHeight}px`;
+              }}
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-orange-500 rounded-full p-2 focus:outline-none"
+            >
+              <SendIconComponent className="w-5 h-5" />
+            </button>
+          </form>
+        </div>
+
+        <nav className="FranklinGothic bg-black border-t border-gray-800 px-4 py-2 flex-shrink-0">
+          <div className="flex justify-between items-center">
+            {navItems.map((item) => (
+              <button key={item.text} className={`text-${item.text === 'AI' ? 'orange-500 text-bold' : 'gray-500'} flex flex-col items-center`}>
+                <item.icon className="w-6 h-6 mb-1 stroke-[1.5]" stroke={`${item.text === 'AI' ? '#FA6600' : 'gray-500'}`} />
+                <span className="text-xs">{item.text}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );
